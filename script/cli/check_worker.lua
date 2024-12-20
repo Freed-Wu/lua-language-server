@@ -27,8 +27,14 @@ function export.runCLI()
         print(lang.script('CLI_CHECK_ERROR_TYPE', type(CHECK_WORKER)))
         return
     end
+    local filepath = fs.path(CHECK_WORKER)
+    local is_directory = fs.is_directory(filepath)
 
-    local rootPath = fs.absolute(fs.path(CHECK_WORKER)):string()
+    local path = filepath
+    if not is_directory then
+        path = fs.path('.')
+    end
+    local rootPath = fs.absolute(path):string()
     local rootUri = furi.encode(rootPath)
     if not rootUri then
         print(lang.script('CLI_CHECK_ERROR_URI', rootPath))
@@ -102,6 +108,9 @@ function export.runCLI()
         config.set(rootUri, 'Lua.diagnostics.neededFileStatus', diagStatus)
 
         local uris = files.getChildFiles(rootUri)
+        if not is_directory then
+            uris = { furi.encode(fs.absolute(filepath):string()) }
+        end
         local max  = #uris
         table.sort(uris)    -- sort file list to ensure the work distribution order across multiple threads
         for i, uri in ipairs(uris) do
